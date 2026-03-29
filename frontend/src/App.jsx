@@ -6,6 +6,8 @@ import React, { useState, useEffect, createContext, useContext } from 'react'
 import Dashboard from './components/Dashboard.jsx'
 import { useTranslation } from './i18n/translations.js'
 
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '')
+
 // ── Language Context ────────────────────────────────────────────────────────
 export const LangContext = createContext({ lang: 'ru', t: (k) => k, setLang: () => {} })
 export const useLang = () => useContext(LangContext)
@@ -29,8 +31,8 @@ export default function App() {
     setError(null)
 
     Promise.all([
-      fetch('/api/farmers', { signal: controller.signal }).then(r => r.json()),
-      fetch('/api/stats',   { signal: controller.signal }).then(r => r.json()),
+      fetch(`${API_BASE_URL}/farmers`, { signal: controller.signal }).then(r => r.json()),
+      fetch(`${API_BASE_URL}/stats`,   { signal: controller.signal }).then(r => r.json()),
     ])
       .then(([farmersData, statsData]) => {
         setFarmers(farmersData)
