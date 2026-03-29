@@ -9,10 +9,20 @@ WORKDIR /app
 # catboost runtime dependency
 RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt /app/requirements.txt
-RUN pip install --upgrade pip && pip install -r /app/requirements.txt
-
-COPY . /app
+# Support both build contexts:
+# 1) repo root (contains /backend)
+# 2) /backend as service root directory
+COPY . /src
+RUN set -eux; \
+    if [ -f /src/backend/requirements.txt ]; then \
+      cp /src/backend/requirements.txt /app/requirements.txt; \
+      cp -R /src/backend/. /app/; \
+    else \
+      cp /src/requirements.txt /app/requirements.txt; \
+      cp -R /src/. /app/; \
+    fi; \
+    pip install --upgrade pip; \
+    pip install -r /app/requirements.txt
 
 EXPOSE 8000
 
