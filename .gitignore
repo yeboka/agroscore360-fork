@@ -1,0 +1,29 @@
+# Python virtual environments
+.venv/
+venv/
+env/
+ENV/
+**/.venv/
+**/venv/
+**/env/
+**/ENV/
+
+# Python cache/artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+
+# Node dependencies and caches
+node_modules/
+**/node_modules/
+npm-cache/
+**/npm-cache/
+
+# Frontend/build outputs
+dist/
+build/
+**/dist/
+**/build/
