@@ -16,6 +16,8 @@ Feature engineering rationale (mapped to PDF rules):
                               region/geography (0–1, higher = riskier)
 """
 
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
