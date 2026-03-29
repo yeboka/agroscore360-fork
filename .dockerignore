@@ -1,0 +1,20 @@
+.git
+.gitignore
+.DS_Store
+
+# Python virtualenvs/caches
+**/.venv/
+**/venv/
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/.mypy_cache/
+
+# Frontend artifacts
+frontend/node_modules/
+frontend/dist/
+
+# Local IDE/cache files
+.cursor/
+**/.idea/
+**/.vscode/
