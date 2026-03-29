@@ -1,0 +1,101 @@
+flowchart TB
+    %% =========================================================
+    %% AgroScore 360 - Scoring System Architecture (Core)
+    %% Render in: https://mermaid.live
+    %% =========================================================
+
+    classDef src fill:#111827,stroke:#6b7280,color:#f9fafb,stroke-width:1px;
+    classDef prep fill:#1f2937,stroke:#14b8a6,color:#ecfeff,stroke-width:1px;
+    classDef feat fill:#0f172a,stroke:#22c55e,color:#dcfce7,stroke-width:1px;
+    classDef model fill:#312e81,stroke:#a78bfa,color:#eef2ff,stroke-width:1px;
+    classDef xai fill:#3f3f46,stroke:#f59e0b,color:#fffbeb,stroke-width:1px;
+    classDef out fill:#052e16,stroke:#16a34a,color:#dcfce7,stroke-width:1px;
+    classDef risk fill:#3f1d1d,stroke:#ef4444,color:#fee2e2,stroke-width:1px;
+
+    subgraph S0["1. Источники данных"]
+        D1[(subsidies_2025.xlsx)]:::src
+        D2[Region climate risk table]:::src
+        D3[Direction weights mapping]:::src
+        D4[Status obligations mapping]:::src
+    end
+
+    subgraph S1["2. Data Ingestion and Validation"]
+        I1[Read Excel header=4]:::prep
+        I2[Schema normalization\nid, region, district, status,\namount, normative, direction]:::prep
+        I3[Data quality checks\n- numeric id only\n- null handling\n- type coercion]:::prep
+        I4[Sanity rules\namount>=0, normative>0]:::prep
+    end
+
+    subgraph S2["3. Feature Engineering Layer"]
+        F0[head_count = amount / normative]:::feat
+        F1[infrastructure_index 1..10\nnormative + head_count + direction weight]:::feat
+        F2[herd_survival_rate 50..99\nstatus + climate risk + noise]:::feat
+        F3[historical_obligations_met 0..1\nstatus-based proxy + noise]:::feat
+        F4[climate_risk_factor 0..1\nregion risk + district noise]:::feat
+        F5[head_count_log = log1p of head_count]:::feat
+        FV[(Feature Vector X)]:::feat
+    end
+
+    subgraph S3["4. Target and Modeling"]
+        T1[Synthetic policy target y\n40% obligations\n25% infrastructure\n20% survival\n15% climate resilience]:::model
+        M1[Train RandomForestRegressor\nn_estimators=120, max_depth=8]:::model
+        M2[Predict efficiency_score 0..100]:::model
+        M3[Calibration and clipping\nround to 0.1]:::model
+    end
+
+    subgraph S4["5. Explainability and Ranking"]
+        X1[SHAP TreeExplainer\nexact sample up to 500 rows]:::xai
+        X2[Approx SHAP for non-sampled rows\nmean abs contribution heuristic]:::xai
+        X3[Per-applicant explanation payload\nfeature -> contribution]:::xai
+        R1[Global ranking\nsort by efficiency_score desc]:::out
+    end
+
+    subgraph S5["6. Decision Support Output"]
+        O1[(Scored dataset payload)]:::out
+        O2[Budget allocation simulation\napproved / reserve / rejected]:::out
+        O3[API responses\n/api/farmers, /api/stats, /api/farmer/id]:::out
+    end
+
+    subgraph S6["7. Control, Risks and Governance"]
+        C1[Versioning needed\nmodel version + data snapshot id]:::risk
+        C2[Monitoring needed\ndata drift + score drift + latency]:::risk
+        C3[Validation needed\nfeature distribution guardrails]:::risk
+        C4[Security needed\nauth, rate-limit, audit trail]:::risk
+    end
+
+    D1 --> I1 --> I2 --> I3 --> I4
+    D2 --> F4
+    D3 --> F1
+    D4 --> F2
+    D4 --> F3
+
+    I4 --> F0
+    I4 --> F1
+    I4 --> F2
+    I4 --> F3
+    I4 --> F4
+    F0 --> F5
+
+    F1 --> FV
+    F2 --> FV
+    F3 --> FV
+    F4 --> FV
+    F5 --> FV
+
+    FV --> M1
+    T1 --> M1
+    M1 --> M2 --> M3
+
+    M1 --> X1
+    M2 --> X2
+    X1 --> X3
+    X2 --> X3
+
+    M3 --> R1
+    X3 --> O1
+    R1 --> O1 --> O2 --> O3
+
+    C1 --- M1
+    C2 --- O3
+    C3 --- I3
+    C4 --- O3
